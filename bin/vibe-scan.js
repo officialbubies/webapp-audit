@@ -81,12 +81,21 @@ program
   });
 
 function displayResults(results) {
-  const { findings, score, url } = results;
-  
+  const { findings, score, url, context } = results;
+
   // Summary
   console.log(chalk.bold('\n📊 Security Score: ') + getScoreDisplay(score));
   console.log(chalk.gray(`   Scanned: ${url}`));
-  console.log(chalk.gray(`   Time: ${results.scanTime}ms\n`));
+  console.log(chalk.gray(`   Time: ${results.scanTime}ms`));
+
+  // Show detected technologies
+  if (context && (context.framework || context.hosting)) {
+    const tech = [];
+    if (context.framework) tech.push(`Framework: ${context.framework}`);
+    if (context.hosting) tech.push(`Hosting: ${context.hosting}`);
+    console.log(chalk.cyan(`   Detected: ${tech.join(' | ')}`));
+  }
+  console.log('');
   
   if (findings.length === 0) {
     console.log(chalk.green('✅ No security issues found!\n'));
@@ -125,23 +134,28 @@ function displayFinding(finding) {
     low: chalk.bgGray.white,
     info: chalk.bgCyan.black
   };
-  
+
   const colorFn = severityColors[finding.severity] || chalk.white;
-  
+
   console.log(colorFn(` ${finding.severity.toUpperCase()} `) + ' ' + chalk.bold(finding.title));
   console.log(chalk.gray(`   Category: ${finding.category}`));
   console.log(`   ${finding.description}`);
-  
+
   if (finding.fix) {
     console.log(chalk.green(`   Fix: ${finding.fix}`));
   }
-  
+
+  // Show context explanation if available
+  if (finding.context) {
+    console.log(chalk.yellow(`   ${finding.context}`));
+  }
+
   if (finding.code) {
     console.log(chalk.gray('   ```'));
     console.log(chalk.yellow(`   ${finding.code.split('\n').join('\n   ')}`));
     console.log(chalk.gray('   ```'));
   }
-  
+
   console.log('');
 }
 
