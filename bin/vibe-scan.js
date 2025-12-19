@@ -15,28 +15,38 @@ program
   .argument('<url>', 'URL to scan')
   .option('-o, --output <file>', 'Output markdown report to file')
   .option('-j, --json', 'Output as JSON')
+  .option('-v, --verbose', 'Show detailed scan progress')
   .option('--no-color', 'Disable colored output')
   .option('--deep', 'Enable deep scan (slower, uses headless browser)')
-  .option('--timeout <ms>', 'Request timeout in milliseconds', '10000')
+  .option('--timeout <ms>', 'Request timeout in milliseconds', '30000')
   .action(async (url, options) => {
     console.log(chalk.bold.cyan('\n🛡️  WebApp Audit v1.0.0\n'));
-    
+
     // Normalize URL
     if (!url.startsWith('http')) {
       url = 'https://' + url;
     }
-    
+
     console.log(chalk.gray(`Target: ${url}\n`));
-    
-    const spinner = ora('Scanning...').start();
-    
+
+    // Verbose logger
+    const verbose = (msg) => {
+      if (options.verbose) {
+        console.log(chalk.dim(`  → ${msg}`));
+      }
+    };
+
+    const spinner = options.verbose ? null : ora('Scanning...').start();
+    if (options.verbose) console.log(chalk.cyan('Starting scan...\n'));
+
     try {
       const results = await scanUrl(url, {
         deep: options.deep,
-        timeout: parseInt(options.timeout)
+        timeout: parseInt(options.timeout),
+        verbose: options.verbose ? verbose : null
       });
-      
-      spinner.stop();
+
+      if (spinner) spinner.stop();
       
       // Generate and display report
       const report = generateReport(results, { json: options.json });
