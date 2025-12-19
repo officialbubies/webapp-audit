@@ -1,9 +1,10 @@
-# Vibe Scanner 🔍
+# WebApp Audit
 
-Security scanner for vibe-coded apps. Performs non-invasive security checks and generates AI-friendly markdown reports that can be fed directly to Claude, ChatGPT, or Cursor to fix vulnerabilities.
+Security scanner for web applications. Performs non-invasive security checks using a headless browser to bypass bot protection, and generates AI-friendly markdown reports.
 
 ## Features
 
+- **Headless Browser Scanning** - Uses Puppeteer to bypass JS challenges and bot protection
 - **Security Headers Analysis** - Checks for CSP, HSTS, X-Frame-Options, etc.
 - **Exposed Files Detection** - Scans for .env, .git, config files, backups
 - **Secret Detection** - Finds API keys, tokens, connection strings in responses
@@ -16,8 +17,8 @@ Security scanner for vibe-coded apps. Performs non-invasive security checks and 
 
 ```bash
 # Clone and install
-git clone https://github.com/yourusername/vibe-scanner.git
-cd vibe-scanner
+git clone https://github.com/officialbubies/webapp-audit.git
+cd webapp-audit
 npm install
 
 # Link globally (optional)
@@ -36,37 +37,30 @@ vibe-scan https://your-app.com --output report.md
 # JSON output for automation
 vibe-scan https://your-app.com --json
 
-# Deep scan with headless browser (coming soon)
-vibe-scan https://your-app.com --deep
+# Custom timeout (in ms)
+vibe-scan https://your-app.com --timeout 30000
 ```
 
 ## Example Output
 
 ```
-🔍 Vibe App Scanner v1.0.0
+🛡️  WebApp Audit v1.0.0
 
 Target: https://example.com
 
-📊 Security Score: 65/100 (C)
+📊 Security Score: 85/100 (A)
    Scanned: https://example.com
-   Time: 1234ms
+   Time: 3234ms
 
 📋 Findings Summary:
-   🟠 High: 2
-   🟡 Medium: 3
-   🟢 Low: 1
+   🟠 High: 1
 
 ─────────────────────────────────────────
 
- HIGH  Missing Content-Security-Policy
+ HIGH  Weak content-security-policy
    Category: headers
-   CSP helps prevent XSS attacks by controlling which resources can be loaded.
+   CSP contains 'unsafe-inline' in script-src
    Fix: Add a Content-Security-Policy header to your server responses.
-
- HIGH  Auth Cookie Missing HttpOnly: session
-   Category: cookies
-   Authentication cookies should have HttpOnly flag to prevent XSS theft.
-   Fix: Add HttpOnly flag to the session cookie.
 ```
 
 ## AI-Friendly Reports
@@ -77,35 +71,20 @@ The `--output report.md` flag generates a markdown file optimized for AI consump
 # Security Scan Report
 
 **Target:** https://example.com
-**Score:** 65/100 (C)
+**Score:** 85/100 (A)
 
 ## Findings
 
-> **AI Assistant Instructions:** Each finding below includes a severity level, 
+> **AI Assistant Instructions:** Each finding below includes a severity level,
 > description, and fix. Apply fixes in order of severity (critical first).
 
-### 🛡️ Security Headers
+### Security Headers
 
-#### 🟠 HIGH: Missing Content-Security-Policy
+#### HIGH: Weak content-security-policy
 
-**Description:** CSP helps prevent XSS attacks...
+**Description:** CSP contains 'unsafe-inline' in script-src
 
-**Fix:** Add a Content-Security-Policy header...
-
-**Implementation:**
-
-\`\`\`javascript
-// Next.js (next.config.js)
-async headers() {
-  return [{
-    source: '/:path*',
-    headers: [{
-      key: 'Content-Security-Policy',
-      value: "default-src 'self'..."
-    }]
-  }]
-}
-\`\`\`
+**Fix:** Remove 'unsafe-inline' from script-src if possible, or use nonces/hashes.
 ```
 
 ## What It Checks
@@ -118,6 +97,7 @@ async headers() {
 | X-Frame-Options | Medium | Prevents clickjacking |
 | X-Content-Type-Options | Medium | Prevents MIME sniffing |
 | Referrer-Policy | Low | Controls referrer info |
+| Permissions-Policy | Low | Controls browser features |
 
 ### Exposed Files
 - `.env`, `.env.local`, `.env.production`
@@ -153,28 +133,35 @@ async headers() {
 # GitHub Actions
 - name: Security Scan
   run: |
-    npm install -g vibe-scanner
-    vibe-scan https://staging.your-app.com --json > security-report.json
+    npx webapp-audit https://staging.your-app.com --json > security-report.json
     if [ $? -eq 2 ]; then
       echo "Critical vulnerabilities found!"
       exit 1
     fi
 ```
 
+## Why Puppeteer?
+
+Many modern hosting platforms (Vercel, Cloudflare, etc.) use JavaScript challenges to block automated requests. Traditional HTTP-based scanners get blocked and can't see your actual security headers. WebApp Audit uses a real browser engine to:
+
+- Pass JavaScript challenges and bot protection
+- See the actual headers your users see
+- Detect client-side security issues
+- Accurately assess your security posture
+
 ## Limitations
 
 - External scanning only (no source code access)
-- Cannot detect all client-side issues without headless browser
-- Rate-limited to avoid overwhelming target servers
+- Requires Chrome/Chromium to be available
 - Some checks may trigger WAF/security systems
 
 ## Contributing
 
 PRs welcome! Areas for improvement:
-- [ ] Add Puppeteer for deep client-side scanning
-- [ ] Add more framework-specific checks (Nuxt, SvelteKit, etc.)
+- [ ] Add more framework-specific checks (Nuxt, SvelteKit, Remix)
 - [ ] Add authentication support for scanning protected pages
-- [ ] Add configuration file support (.vibescanrc)
+- [ ] Add configuration file support
+- [ ] Add parallel scanning for multiple URLs
 
 ## License
 
